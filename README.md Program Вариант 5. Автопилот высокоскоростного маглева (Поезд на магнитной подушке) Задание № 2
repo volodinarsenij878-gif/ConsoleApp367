@@ -9,19 +9,92 @@
     internal class Program
     {
         static void Main()
-        { }
-         // Перегрузка 1: штатное ступенчатое снижение скорости (по ссылке).
-         // Перегрузка 2: экстренное торможение на уклоне с рекуперацией и возвратом тепла.
-        public void ApplyMagneticBrake(ref double speedKmh, int powerStep)
         {
-            // Штатное торможение
-            speedKmh = 0.0; // Заглушка — в реальности расчёт
+            Console.WriteLine("=== Пункт 2: Перегрузки ApplyMagneticBrake ===\n");
+
+            // --- Тест перегрузки 1: штатное ступенчатое торможение ---
+            double speedNormal = 520.0;
+            int powerStep = 5; // 5 ступеней
+
+            ApplyMagneticBrake(ref speedNormal, powerStep);
+
+            Console.WriteLine($"Штатное торможение: {powerStep} ступеней");
+            Console.WriteLine($"Скорость после штатного торможения: {speedNormal:F1} км/ч\n");
+
+            // --- Тест перегрузки 2: экстренное торможение на уклоне ---
+            double speedEmergency = 480.0;
+            double slopeAngle = 4.0;      // уклон 4 градуса
+            bool emergencyRegen = true;   // включена рекуперация
+
+            ApplyMagneticBrake(ref speedEmergency, slopeAngle, emergencyRegen, out double heatKwh);
+
+            Console.WriteLine($"Экстренное торможение: уклон {slopeAngle}°, рекуперация = {emergencyRegen}");
+            Console.WriteLine($"Скорость после экстренного торможения: {speedEmergency:F1} км/ч");
+            Console.WriteLine($"Выделенное тепло на тормозных резисторах: {heatKwh:F2} кВт·ч\n");
+
+            Console.WriteLine("Нажмите любую клавишу для выхода...");
+            Console.ReadKey();
         }
 
-        public void ApplyMagneticBrake(ref double speedKmh, double slopeAngle, bool emergencyRegen, out double heatKwh)
+        /// <summary>
+        /// Перегрузка 1: Штатное ступенчатое снижение скорости.
+        /// </summary>
+        public static void ApplyMagneticBrake(ref double speedKmh, int powerStep)
         {
-            // Экстренное торможение с рекуперацией
-            heatKwh = 0.0; // Заглушка — в реальности расчёт
+            const double decelerationPerStep = 10.0; // снижение на 10 км/ч за ступень
+
+            double targetSpeed = speedKmh - (powerStep * decelerationPerStep);
+            speedKmh = Math.Max(0.0, targetSpeed); // скорость не может быть отрицательной
+        }
+
+        /// <summary>
+        /// Перегрузка 2: Экстренное торможение на уклоне с рекуперацией.
+        /// Возвращает тепло, выделившееся на тормозных резисторах.
+        /// </summary>
+        public static void ApplyMagneticBrake(
+            ref double speedKmh,
+            double slopeAngle,
+            bool emergencyRegen,
+            out double heatKwh)
+        {
+            const double gravity = 9.81;
+            const double massTon = 300.0;          // масса поезда (тонн)
+            const double brakingDistance = 200.0;  // условный тормозной путь (м) при экстренном торможении
+
+            heatKwh = 0.0;
+
+            // Переводим угол уклона в радианы и считаем синус
+            double radians = slopeAngle * Math.PI / 180.0;
+            double sinSlope = Math.Sin(radians);
+
+            // Сила тяжести вдоль уклона: F = m * g * sin(α)
+            double massKg = massTon * 1000.0;
+            double gravityForceNewtons = massKg * gravity * sinSlope;
+
+            // Работа силы тяжести на тормозном пути: A = F * S (в джоулях)
+            double energyJoules = gravityForceNewtons * brakingDistance;
+
+            // Перевод в кВт·ч: 1 кВт·ч = 3 600 000 Дж
+            double totalEnergyKwh = energyJoules / 3_600_000.0;
+
+            if (emergencyRegen)
+            {
+                // При рекуперации часть энергии уходит в сеть, а на резисторах рассеивается только потери.
+                // Допустим, КПД рекуперации 85%, значит, 15% рассеивается как тепло.
+                const double regenLossFraction = 0.15;
+                heatKwh = totalEnergyKwh * regenLossFraction;
+
+                // Резкое торможение: сильное снижение скорости
+                speedKmh = Math.Max(0.0, speedKmh - 160.0);
+            }
+            else
+            {
+                // Без рекуперации вся энергия торможения (включая уклон) рассеивается на резисторах
+                heatKwh = totalEnergyKwh;
+
+                // Более плавное экстренное торможение без рекуперации
+                speedKmh = Math.Max(0.0, speedKmh - 120.0);
+            }
         }
     }
     }
