@@ -1,0 +1,35 @@
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+
+    namespace Program197
+    {
+    internal class Program
+    {
+        static void Main()
+        {
+            Console.Write("Порт (21, 22, 25, 80, 443): ");
+            if (!int.TryParse(Console.ReadLine(), out int port))
+            {
+                Console.WriteLine("Ошибка числа.");
+                return;
+            }
+
+            string protocol;
+            switch (port)
+            {
+                case 21: protocol = "FTP (File Transfer Protocol)"; break;
+                case 22: protocol = "SSH (Secure Shell)"; break;
+                case 25: protocol = "SMTP (Simple Mail Transfer Protocol)"; break;
+                case 80: protocol = "HTTP (Hypertext Transfer Protocol)"; break;
+                case 443: protocol = "HTTPS (HTTP over TLS/SSL)"; break;
+                default:
+                    Console.WriteLine("Неизвестный порт.");
+                    return;
+            }
+            Console.WriteLine(protocol);
+        }
+    }
+    }
